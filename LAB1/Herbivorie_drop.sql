@@ -31,6 +31,17 @@ DROP TABLE Arbre CASCADE ;
 DROP DOMAIN Arbre_id CASCADE;
 DROP DOMAIN Description CASCADE;
 DROP DOMAIN Peuplement_id CASCADE;
+-- PE_BGN
+DROP DOMAIN Etat_id CASCADE;
+DROP DOMAIN Taux_val CASCADE;
+DROP DOMAIN Taux_id CASCADE;
+DROP DOMAIN Plant_id CASCADE;
+DROP DOMAIN Placette_id CASCADE;
+DROP DOMAIN Date_ISO CASCADE;
+DROP DOMAIN Note CASCADE;
+DROP DOMAIN Parcelle CASCADE;
+DROP DOMAIN Dim_mm CASCADE;
+-- PE_END
 
 /*
 -- =========================================================================== Z
