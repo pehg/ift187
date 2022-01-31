@@ -78,7 +78,7 @@ CREATE TABLE Taux
   tmin Taux_val NOT NULL,
   tmax Taux_val NOT NULL,
   CONSTRAINT Taux_cc0 PRIMARY KEY (tcat),
-  CONSTRAINT Taux_min_max CHECK ( tmin < tmax )
+  CONSTRAINT Taux_min_max CHECK ( tmin <= tmax )
 -- PE_END
 );
 
@@ -104,7 +104,7 @@ CREATE DOMAIN Plant_id
   CHECK ( VALUE > 0 );
 CREATE DOMAIN Placette_id
   TEXT
-  CHECK ( VALUE SIMILAR TO '[A-Z]{1}[0-9]{1-2]' );
+  CHECK ( VALUE SIMILAR TO '[A-Z]{1}[0-9]{1}' );
 CREATE DOMAIN Date_ISO
   DATE
   CHECK ( VALUE >= '1900-01-01' );
@@ -126,9 +126,9 @@ CREATE TABLE Placette
   graminees Taux_id       NOT NULL,
   mousses   Taux_id       NOT NULL,
   fougeres  Taux_id       NOT NULL,
-  arb_p1    Arbre_id      NOT NULL,
-  arb_p2    Arbre_id      NOT NULL,
-  arb_p3    Arbre_id      NOT NULL,
+  arb_p1    Arbre_id      ,
+  arb_p2    Arbre_id      ,
+  arb_p3    Arbre_id      ,
   date      Date_ISO      NOT NULL,
   CONSTRAINT Placette_cc0 PRIMARY KEY (plac),
   CONSTRAINT Placette_cr0 FOREIGN KEY (peup) REFERENCES Peuplement (peup),
