@@ -80,7 +80,10 @@ INSERT INTO CarnetMeteo VALUES
 ('2020-06-01','-10','10','5','95','0','4E'),	-- Oture: Hex ASCII value for N
 ('2020-06-01','-10','10','5','95','0','2020-06-01'),	-- Oture: not a number repr
 ('2020-06-01','-10','10','5','95','0',''),	-- nature: empty
+
    -- Section of real data (almost all are valid)
+   -- Obtained from https://québec.weatherstats.ca/download.html
+   -- min temperature from 2021-06-17 and 2021-06-18 was modified to test query Y4
 ('2021-08-31','14.8','25.4','44','91','0','O'),
 ('2021-08-30','17.6','27.8','49','99','4.5','P'),
 ('2021-08-29','15.2','20','75','99','12.4','P'),
