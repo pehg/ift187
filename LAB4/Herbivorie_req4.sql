@@ -40,8 +40,9 @@ DROP DOMAIN NaturePrecip CASCADE ;      -- CASCADE also drops castNaturePrecip()
 DROP TABLE Temperature CASCADE ;
 DROP TABLE Humidite CASCADE ;
 DROP TABLE Precipitation CASCADE ;
+DROP TABLE filteredDataCopy CASCADE ;   -- Debugging
 
-DROP VIEW filteredData CASCADE ;
+--DROP VIEW filteredData CASCADE ;      -- dropped by cascaded domains
 --DROP VIEW filteredHumid CASCADE ;     -- Debugging
 --DROP VIEW filteredTemp CASCADE ;      -- Debugging
 
@@ -73,8 +74,8 @@ CREATE DOMAIN TauxHumidite
 
 -- Precipitation mm (0 <= prec <= x)
 CREATE DOMAIN Precipitation_mm
-  SMALLINT
-  CHECK ( VALUE >= 0 );
+  FLOAT
+  CHECK ( VALUE >= 0.0 );
 
 -- N: Neige, G: Grêle, P: pluie, O: None
 CREATE DOMAIN NaturePrecip
@@ -141,7 +142,7 @@ CREATE OR REPLACE FUNCTION verifyTemp(field TEXT)
 LANGUAGE SQL AS
   $$
     --SELECT field SIMILAR TO '-?[0-5]?\d(?:.\d\d)?'
-    SELECT field SIMILAR TO '-?((50.?0?0?)|([1-4]?\d.?\d{0,2}))'
+    SELECT field SIMILAR TO '-?((50(.0)?)|([1-4]?\d(.\d)?))'
   $$
 ;
 
@@ -150,7 +151,7 @@ CREATE OR REPLACE FUNCTION verifyHumid(field TEXT)
 LANGUAGE SQL AS
   $$
     --SELECT field SIMILAR TO '\d{1,3}'
-  SELECT field SIMILAR TO '(\d\d)|(100)'
+  SELECT field SIMILAR TO '(\d{1,2})|(100)'
   $$
 ;
 
@@ -158,7 +159,8 @@ CREATE OR REPLACE FUNCTION verifyPrecip(field TEXT)
   RETURNS BOOLEAN
 LANGUAGE SQL AS
   $$
-    SELECT field SIMILAR TO '\d{1,3}'
+    --SELECT field SIMILAR TO '\d{1,3}'
+    SELECT field SIMILAR TO '\d{1,3}(.\d)?'
   $$
 ;
 
@@ -294,19 +296,31 @@ INSERT INTO Precipitation
 
 CREATE OR REPLACE VIEW conditionsHorsPrecip AS
   (
-    SELECT journee, temp_min, temp_max, humid_min, humid_max, nature_precip
-      FROM filteredData
+    SELECT *
+      FROM Temperature NATURAL JOIN Humidite
   )
 ;
 
 -- Y4.
 -- Retirer les données météorologiques du 17 au 19 juin si la température minimale rapportée est en deçà de 4 C
 -- (le capteur était défectueux). Utiliser l’instruction DELETE.
+CREATE TABLE filteredDataCopy AS
+    TABLE filteredData
+;
 
+DELETE FROM Temperature
+  WHERE (journee BETWEEN '2021-06-17' AND '2021-06-19')
+    AND (temp_min < 4);
 
 -- Y5.
 -- Augmenter les températures rapportées de 10 % entre le 20 et 30 juin (le capteur était mal calibré). Utiliser
 -- l’instruction UPDATE.
+
+UPDATE Temperature
+  SET temp_max = temp_max*(1.10),
+      temp_min = temp_min*(1.10)
+  WHERE journee BETWEEN '2021-06-20' AND '2021-06-30'
+;
 
 
 /*
