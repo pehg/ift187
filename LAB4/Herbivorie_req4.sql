@@ -40,7 +40,7 @@ DROP DOMAIN NaturePrecip CASCADE ;      -- CASCADE also drops castNaturePrecip()
 DROP TABLE Temperature CASCADE ;
 DROP TABLE Humidite CASCADE ;
 DROP TABLE Precipitation CASCADE ;
-DROP TABLE filteredDataCopy CASCADE ;   -- Debugging
+--DROP TABLE filteredDataCopy CASCADE ;   -- Debugging
 
 --DROP VIEW filteredData CASCADE ;      -- dropped by cascaded domains
 --DROP VIEW filteredHumid CASCADE ;     -- Debugging
@@ -65,7 +65,7 @@ DROP FUNCTION castDate(field Text) CASCADE ;
 -- Float - Centigrades (-50 <= val <= 50)
 CREATE DOMAIN TempValue
   FLOAT
-  CHECK(VALUE BETWEEN -50.00 AND 50.00);
+  CHECK(VALUE BETWEEN -50.0 AND 50.0);
 
 -- Pourcentage (0-100)
 CREATE DOMAIN TauxHumidite
@@ -220,51 +220,60 @@ LANGUAGE SQL AS
 -- --------------------------------------------------------
 
 -- filteredData
-CREATE OR REPLACE VIEW filteredData AS
-  (
-    SELECT
-           castDate(journee) AS journee,
-           castTemp(temp_min) AS temp_min,
-           castTemp(temp_max) AS temp_max,
-           castHumid(humid_min) AS humid_min,
-           castHumid(humid_max) AS humid_max,
-           castPrecip(precip) AS precip,
-           castNaturePrecip(nature_precip) AS nature_precip
-    FROM CarnetMeteo
-    WHERE verifyDate(journee)
-      AND verifyTemp(temp_min)
-      AND verifyTemp(temp_max)
-      AND verifyHumid(humid_min)
-      AND verifyHumid(humid_max)
-      AND verifyPrecip(precip)
-      AND verifyNaturePrecip(nature_precip)
-  )
-;
+-- CREATE OR REPLACE VIEW filteredData AS
+--   (
+--     SELECT
+--            castDate(journee) AS journee,
+--            castTemp(temp_min) AS temp_min,
+--            castTemp(temp_max) AS temp_max,
+--            castHumid(humid_min) AS humid_min,
+--            castHumid(humid_max) AS humid_max,
+--            castPrecip(precip) AS precip,
+--            castNaturePrecip(nature_precip) AS nature_precip
+--     FROM CarnetMeteo
+--     WHERE verifyDate(journee)
+--       AND verifyTemp(temp_min)
+--       AND verifyTemp(temp_max)
+--       AND verifyHumid(humid_min)
+--       AND verifyHumid(humid_max)
+--       AND verifyPrecip(precip)
+--       AND verifyNaturePrecip(nature_precip)
+--   )
+-- ;
 
 -- --------------------------------------------------------------------------------------------------------------------
 --  Separate queries from filteredData (Debugging)
 -- --------------------------------------------------------------------------------------------------------------------
 
 -- filteredTemp
--- --     SELECT castDate(journee) AS journee, castTemp(temp_min) AS temp_min, castTemp(temp_max) AS temp_max
---     SELECT (journee) AS journee, (temp_min) AS temp_min, (temp_max) AS temp_max -- DBG
---     FROM CarnetMeteo
---     WHERE verifyDate(journee) AND verifyTemp(temp_min) AND verifyTemp(temp_max)
--- ;
+CREATE OR REPLACE VIEW filteredTemp AS
+  (
+    SELECT castDate(journee) AS journee, castTemp(temp_min) AS temp_min, castTemp(temp_max) AS temp_max
+--    SELECT (journee) AS journee, (temp_min) AS temp_min, (temp_max) AS temp_max -- DBG
+    FROM CarnetMeteo
+    WHERE verifyDate(journee) AND verifyTemp(temp_min) AND verifyTemp(temp_max)
+  )
+;
 
 -- filteredHumid
--- --    SELECT castDate(journee) AS journee, castHumid(temp_min) AS humid_min, castHumid(temp_max) AS humid_max
---     SELECT (journee) AS journee, (humid_min) AS humid_min, (humid_max) AS humid_max -- DBG
---     FROM CarnetMeteo
---     WHERE verifyDate(journee) AND verifyHumid(humid_min) AND verifyHumid(humid_max)
--- ;
+CREATE OR REPLACE VIEW filtereHumid AS
+  (
+    SELECT castDate(journee) AS journee, castHumid(humid_min) AS humid_min, castHumid(humid_max) AS humid_max
+--    SELECT (journee) AS journee, (humid_min) AS humid_min, (humid_max) AS humid_max -- DBG
+    FROM CarnetMeteo
+    WHERE verifyDate(journee) AND verifyHumid(humid_min) AND verifyHumid(humid_max)
+  )
+;
 
 -- filteredPrecip
--- --    SELECT castDate(journee) AS journee, castHumid(temp_min) AS humid_min, castHumid(temp_max) AS humid_max
---     SELECT (journee) AS journee, (precip) AS precip, (nature_precip) AS nature_precip -- DBG
---     FROM CarnetMeteo
---     WHERE verifyDate(journee) AND verifyPrecip(precip) AND verifyNaturePrecip(nature_precip)
--- ;
+CREATE OR REPLACE VIEW filteredPrecip AS
+  (
+    SELECT castDate(journee) AS journee, castPrecip(precip) AS precip, castNaturePrecip(nature_precip) AS nature_precip
+--    SELECT (journee) AS journee, (precip) AS precip, (nature_precip) AS nature_precip -- DBG
+    FROM CarnetMeteo
+    WHERE verifyDate(journee) AND verifyPrecip(precip) AND verifyNaturePrecip(nature_precip)
+  )
+;
 
 
 -- ------------------------------------------------------------------------
@@ -274,19 +283,19 @@ CREATE OR REPLACE VIEW filteredData AS
 -- Fill Temperature table
 INSERT INTO Temperature
   SELECT journee, temp_min, temp_max
-    FROM filteredData
+    FROM filteredTemp
 ;
 
 -- Fill Humidité table
 INSERT INTO Humidite
   SELECT journee, humid_min, humid_max
-    FROM filteredData
+    FROM filtereHumid
 ;
 
 -- Fill Precipitation table
 INSERT INTO Precipitation
   SELECT journee, precip, nature_precip
-    FROM filteredData
+    FROM filteredPrecip
 ;
 
 
@@ -304,9 +313,9 @@ CREATE OR REPLACE VIEW conditionsHorsPrecip AS
 -- Y4.
 -- Retirer les données météorologiques du 17 au 19 juin si la température minimale rapportée est en deçà de 4 C
 -- (le capteur était défectueux). Utiliser l’instruction DELETE.
-CREATE TABLE filteredDataCopy AS
-    TABLE filteredData
-;
+-- CREATE TABLE filteredDataCopy AS
+--     TABLE filteredData
+-- ;
 
 DELETE FROM Temperature
   WHERE (journee BETWEEN '2021-06-17' AND '2021-06-19')
