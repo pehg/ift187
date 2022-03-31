@@ -1,230 +1,358 @@
--- CREATE DATABASE EQUIPEMENTTYPES;
--- \c EQUIPEMENTTYPES;
+/*
+-- =========================================================================== A
+Activité : IFT187
+Trimestre : Hiver 2022
+Composant : TS_cre.sql
+Encodage : UTF-8, sans BOM; fin de ligne Unix (LF)
+Plateforme : PostgreSQL 9.4-14.1
+Contributeurs : Maciniss Aliouane (alim2101)
+                Kim Desroches (desk1001)
+                Pedro Edyvan Hernandez Garcia (herp2601)
+                Yvan Ndong Ekouaga (ndoy0901)
+Version : 0.1.
+Statut : base de développement
+Référence : Document Herbivorie_cre.sql du cours IFT187 donné par Luc Lavoie
+-- =========================================================================== A
+*/
 
-CREATE TABLE RECETTE (
-  idre TEXT,
+/*
+-- =========================================================================== B
+Création du schéma relationnel correspondant au schéma conceptuel du travail de
+session.
+-- =========================================================================== B
+*/
+
+--Création des domaines
+
+CREATE DOMAIN R_id
+    --Code identifiant uniquement une recette
+    TEXT
+    CHECK(VALUE SIMILAR TO ''); --todo
+
+CREATE DOMAIN M_id
+    --Code identifiant uniquement un type de mesure
+    --Représente les 4 premières lettres du type de mesure. Par exemple, pour une mesure de température : temp
+    TEXT
+    CHECK ( VALUE SIMILAR TO '[A-Z]{4}[1-9]{1-6}');
+
+CREATE DOMAIN Unite_mes
+    -- Abréviation de l'unité de mesure
+    -- Choix discrétionnaire compatible avec les indications reçues.
+    TEXT
+    CHECK (VALUE SIMILAR TO '[A-Z]{1-4}');
+
+CREATE DOMAIN P_no
+    --Code identifiant uniquement un produit
+    TEXT
+    CHECK(VALUE SIMILAR TO ''); --TODO
+
+CREATE DOMAIN Lot_no
+    --Code identifiant le lot du produit
+    TEXT
+    CHECK(VALUE SIMILAR TO '[0-9]{8}');
+
+CREATE DOMAIN F_no
+    --Code identifiant uniquement un fournisseur
+    TEXT
+    CHECK(VALUE SIMILAR TO '[F][0-9]{4}[A-Z]{4}'); --TODO
+
+CREATE DOMAIN F_ad
+    --Format de l'adresse du fournisseur
+    TEXT
+    CHECK ( VALUE SIMILAR TO ''); --TODO
+
+CREATE DOMAIN F_email
+    --Format de l'adresse courriel du fournisseur
+    TEXT
+    CHECK ( VALUE SIMILAR TO '^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$'); --TODO: vérifier la longueur
+
+CREATE DOMAIN F_phone
+    --Format du numéro de téléphone provenant des pays membres de l'ITU.
+    --Le numéro de téléphone ne comprend que les chiffres qui les composent.
+    TEXT
+    CHECK (VALUE SIMILAR TO '[0-9]{8,13}');
+
+CREATE DOMAIN Equip_no
+    --Code identifiant un équipement, représente le numéro de série de cet équipement
+    TEXT
+    CHECK ( VALUE SIMILAR TO ''); --TODO
+
+CREATE DOMAIN TEquip_id
+    --Code identifiant uniquement un type d'équipement
+    TEXT
+    CHECK ( VALUE SIMILAR TO ''); --TODO
+
+CREATE DOMAIN Cap_no
+    --Code identifiant un capteur, représente le numéro de série de ce capteur
+    TEXT
+    CHECK ( VALUE SIMILAR TO ''); --TODO
+
+CREATE DOMAIN TCap_id
+    --Code identifiant uniquement un type de capteur
+    TEXT
+    CHECK ( VALUE SIMILAR TO ''); --TODO
+
+CREATE DOMAIN C_id
+    --Code identifiant uniquement une cuvée
+    TEXT
+    CHECK ( VALUE SIMILAR TO ''); --TODO
+
+
+
+
+--Creation des tables
+
+CREATE TABLE Recette (
+  idR R_id,
   auteur TEXT,
   -- inspiration TEXT,
-  PRIMARY KEY (idre)
+  CONSTRAINT Recette_cc0 PRIMARY KEY (idR)
 );
 
-CREATE TABLE CUVEE (
-  idcu TEXT,
+CREATE TABLE Cuvee (
+  idC C_id,
   responsable TEXT,
   debut TIMESTAMP,
   fin TIMESTAMP,
-  idre TEXT,
-  PRIMARY KEY (idcu)
+  idR R_id,
+  CONSTRAINT Cuvee_cc0 PRIMARY KEY (idC),
+  CONSTRAINT Cuvee_cr0 FOREIGN KEY (idR) REFERENCES Recette (idR)
 );
 
-CREATE TABLE EQUIPEMENT (
-  idmodele TEXT,
-  noserie TEXT,
+CREATE TABLE EquipementType (
+  idTEquip TEXT,
   description TEXT,
-  PRIMARY KEY (idmodele, noserie)
+  CONSTRAINT EquipementType_cc0 PRIMARY KEY (idTEquip)
 );
 
-CREATE TABLE EQUIPEMENTTYPE (
-  idmodele TEXT,
+CREATE TABLE Equipement (
+  idTEquip TEXT,
+  noSerie TEXT,
   description TEXT,
-  PRIMARY KEY (idmodele)
+  CONSTRAINT Equipement_cc0 PRIMARY KEY (idTEquip, noSerie),
+  CONSTRAINT Equipement_cr0 FOREIGN KEY (idTEquip) REFERENCES EquipementType (idTEquip)
 );
 
-CREATE TABLE ETAPE (
-  idre TEXT,
-  noetape SMALLINT, -- Numéro étape
+CREATE TABLE Etape (
+  idR TEXT,
+  noE SMALLINT, -- Numéro étape
   description TEXT,
-  idmodele TEXT, -- id du équipement type
-  PRIMARY KEY (idre, noetape)
+  idTEquip TEXT, -- id du équipement type
+  CONSTRAINT Etape_cc0 PRIMARY KEY (idR, noE),
+  CONSTRAINT Etape_cr0 FOREIGN KEY (idTEquip) REFERENCES EquipementType (idTEquip),
+  CONSTRAINT Etape_cr1 FOREIGN KEY (idR) REFERENCES Recette (idR)
 );
 
-CREATE TABLE ETAPECU (
-  idcu TEXT,
-  noetcu TEXT,
+CREATE TABLE EtapeCu (
+  idC C_id,
+  noECu TEXT,
   debut  TIMESTAMP,
   fin TIMESTAMP,
-  idre TEXT,
-  noetape SMALLINT,
-  PRIMARY KEY (idcu, noetcu)
+  idR R_id,
+  noE SMALLINT,
+  CONSTRAINT EtapeCu_cc0 PRIMARY KEY (idC, noECu),
+  CONSTRAINT EtapeCu_cr0 FOREIGN KEY (idR, noE) REFERENCES Etape (idR, noE),
+  CONSTRAINT EtapeCu_cr1 FOREIGN KEY (idC) REFERENCES Cuvee (idC)
 );
 
-CREATE TABLE PARTIEDEE (
-  idmodele TEXT,
-  noserie TEXT,
-  idmodele_1 TEXT,
-  noserie TEXT,
-  PRIMARY KEY (idmodele, noserie, idmodele_1, noserie)
-);
-
-CREATE TABLE OPTIONDEE (
-  idmodele TEXT,
-  idmodele_1 TEXT,
-  PRIMARY KEY (idmodele, idmodele_1)
-);
-
-CREATE TABLE CAPTEUR (
-  idmodele TEXT,
-  noserie TEXT,
+CREATE TABLE CapteurType (
+  idTCap TEXT,
   description TEXT,
-  PRIMARY KEY (idmodele, noserie)
+  CONSTRAINT CapteurType_cc0 PRIMARY KEY (idTCap)
 );
 
-CREATE TABLE CAPTEURTYPE (
-  idmodele TEXT,
+CREATE TABLE Capteur (
+  idTCap TEXT,
+  noSerie TEXT,
   description TEXT,
-  PRIMARY KEY (idmodele)
+  CONSTRAINT Capteur_cc0 PRIMARY KEY (idTCap, noSerie),
+  CONSTRAINT Capteur_cr0 FOREIGN KEY (idTCap) REFERENCES CapteurType (idTCap)
 );
 
-CREATE TABLE SOUSETAPE (
-  idre TEXT,
-  noetape SMALLINT,
-  nose SMALLINT,
+CREATE TABLE SousEtape (
+  idR R_id,
+  noE SMALLINT,
+  noSE SMALLINT,
   description TEXT,
-  PRIMARY KEY (idre, noetape, nose)
+  CONSTRAINT SousEtape_cc0 PRIMARY KEY (idR, noE, noSE),
+  CONSTRAINT SousEtape_cr0 FOREIGN KEY (idR, noE) REFERENCES Etape (idR, noE)
 );
 
-CREATE TABLE SOUSETAPECU (
-  idcu TEXT,
-  noetcu TEXT,
-  nosecu TEXT,
+CREATE TABLE SousEtapeCu (
+  idC C_id,
+  noECu TEXT,
+  noSEcu TEXT,
   debut TIMESTAMP,
   fin TIMESTAMP,
-  idre TEXT,
-  noetape SMALLINT,
-  nose SMALLINT,
-  PRIMARY KEY (idcu, noetcu, nosecu)
+  idR R_id,
+  noE SMALLINT,
+  noSE SMALLINT,
+  CONSTRAINT SousEtapeCu_cc0 PRIMARY KEY (idC, noECu, noSEcu),
+  CONSTRAINT SousEtapeCu_cr0 FOREIGN KEY (idR, noE, noSE) REFERENCES SousEtape (idR, noE, noSE),
+  CONSTRAINT SousEtapeCu_cr1 FOREIGN KEY (idC, noECu) REFERENCES EtapeCu (idC, noECu)
 );
 
-CREATE TABLE OPTIONDEC (
-  idmodele TEXT,
-  idmesure TEXT,
-  PRIMARY KEY (idmodele, idmesure)
-);
-
-CREATE TABLE MESURETYPE (
-  idmesure TEXT,
-  unite TEXT,   -- Changer pour des options? (Kg), (L), (C),
+CREATE TABLE MesureType (
+  idM M_id,
+  unite Unite_mes,   -- Changer pour des options? (Kg), (L), (C),
   plagetype TEXT,
   description TEXT,
-  PRIMARY KEY (idmesure)
+  CONSTRAINT MesureType_cc0 PRIMARY KEY (idM)
 );
 
-CREATE TABLE ACTION (
-  idre TEXT,
-  noetape SMALLINT,
-  nose SMALLINT,
-  noac TEXT,
+CREATE TABLE Action (
+  idR R_id,
+  noE SMALLINT,
+  noSE SMALLINT,
+  noA TEXT,
   depart TEXT,
   duree TEXT,
   description TEXT,
-  idmesure TEXT,
-  PRIMARY KEY (idre, noetape, nose, noac)
+  idM M_id,
+  CONSTRAINT Action_cc0 PRIMARY KEY (idR, noE, noSE, noA),
+  CONSTRAINT Action_cr1 FOREIGN KEY (idR, noE, noSE) REFERENCES SousEtape (idR, noE, noSE)
 );
 
-CREATE TABLE ACTIONCU (
-  idcu TEXT,
-  noetcu TEXT,
-  nosecu TEXT,
-  noaccu TEXT,
+
+CREATE TABLE MesureRe (
+    idR R_id,
+    noE SMALLINT,
+    noSE SMALLINT,
+    noA TEXT,
+    idM M_id,
+    frequence TIME,       -- TODO: precision
+    seuilscible TEXT,   -- TODO: precision
+    seuilsalerte TEXT,  -- TODO: precision
+    CONSTRAINT MesureRe_cc0 PRIMARY KEY (idM),
+    CONSTRAINT MesureRe_cr0 FOREIGN KEY (idM) REFERENCES MesureType (idM),
+    CONSTRAINT MesureRe_cr1 FOREIGN KEY (idR, noE, noSE, noA) REFERENCES Action (idR, noE, noSE, noA)
+
+);
+
+
+CREATE TABLE ActionCu (
+  idC C_id,
+  noECu TEXT,
+  noSEcu TEXT,
+  noACu TEXT,
   debut  TIMESTAMP,
   fin TIMESTAMP,
-  idre TEXT,
-  noetape SMALLINT,
-  nose SMALLINT,
-  noac TEXT,
-  PRIMARY KEY (idcu, noetcu, nosecu, noaccu)
+  idR R_id,
+  noE SMALLINT,
+  noSE SMALLINT,
+  noA TEXT,
+  CONSTRAINT ActionCu_cc0 PRIMARY KEY (idC, noECu, noSEcu, noACu),
+  CONSTRAINT ActionCu_cr0 FOREIGN KEY (idR, noE, noSE, noA) REFERENCES Action (idR, noE, noSE, noA),
+  CONSTRAINT ActionCu_cr1 FOREIGN KEY (idC, noECu, noSEcu) REFERENCES SousEtapeCu (idC, noECu, noSEcu)
 );
 
-CREATE TABLE MESURERE (
-  idmesure TEXT,
-  frequence TIME,       -- TODO: precision
-  seuilscible DOUBLE,   -- TODO: precision
-  seuilsalerte DOUBLE,  -- TODO: precision
-  PRIMARY KEY (idmesure)
+
+
+CREATE TABLE Ingredient (
+  noI TEXT,
+  nomI TEXT,
+  CONSTRAINT Ingredient_cc0 PRIMARY KEY (noI)
 );
 
-/*
-CREATE TABLE AUTRERE (
-  description TEXT,
-  PRIMARY KEY ()
+CREATE TABLE Fournisseur (
+    noF F_no,
+    nomF TEXT,
+    adresse TEXT,
+    telephone TEXT,
+    courriel TEXT,
+    CONSTRAINT Fournisseur_cc0 PRIMARY KEY (noF)
 );
-*/
 
-CREATE TABLE INTRANTRE (
-  quantite TEXT,
-  noi TEXT
+CREATE TABLE Produit (
+    noP P_no,
+    noLot Lot_no,
+    quantite TEXT,
+    dateRecu TEXT,
+    peremption TEXT,
+    noF F_no,
+    noI TEXT,
+    CONSTRAINT Produit_cc0 PRIMARY KEY (noP),
+    CONSTRAINT Produit_cr0 FOREIGN KEY (noI) REFERENCES Ingredient (noI),
+    CONSTRAINT Produit_cr1 FOREIGN KEY (noF) REFERENCES Fournisseur (noF)
+);
+
+CREATE TABLE IntrantR (
+    idR R_id,
+    noE SMALLINT,
+    noSE SMALLINT,
+    noA TEXT,
+    noI TEXT,
+    quantite TEXT,
                        -- RQ: ajouter l'unité?
---   PRIMARY KEY ()
+    CONSTRAINT IntrantR_cr0 FOREIGN KEY (idR, noE, noSE, noA) REFERENCES Action (idR, noE, noSE, noA),
+    CONSTRAINT IntrantR_cr1 FOREIGN KEY (noI) REFERENCES Ingredient (noI)
+
 );
 
-CREATE TABLE INTRANTCU (
-  statut TEXT,
-  nop TEXT
---   PRIMARY KEY ()
+CREATE TABLE IntrantCu (
+    idC C_id,
+    noECu TEXT,
+    noSEcu TEXT,
+    noACu TEXT,
+    statut TEXT,
+    noP P_no,
+    CONSTRAINT IntrantCu_cr0 FOREIGN KEY (noP) REFERENCES Produit (noP),
+    CONSTRAINT ActionCu_cr1 FOREIGN KEY (idC, noECu, noSEcu, noACu) REFERENCES ActionCu (idC, noECu, noSEcu, noACu)
 );
 
-/*
-CREATE TABLE AUTRECU (
-  statut TEXT,
-  PRIMARY KEY ()
-);
-*/
 
-/*
-CREATE TABLE MESURECU (
-  valeur TEXT,
-  PRIMARY KEY ()
-);
-*/
-
-CREATE TABLE INGREDIENT (
-  noi TEXT,
-  nom TEXT,
-  PRIMARY KEY (noi)
+CREATE TABLE AutreR (
+    idR R_id,
+    noE SMALLINT,
+    noSE SMALLINT,
+    noA TEXT,
+    description TEXT,
+    CONSTRAINT AutreR_cr0 FOREIGN KEY (idR, noE, noSE, noA) REFERENCES Action (idR, noE, noSE, noA)
 );
 
-CREATE TABLE PRODUIT (
-  nop TEXT,
-  nolot TEXT,
-  quantite TEXT,
-  reception TEXT,
-  peremption TEXT,
-  nof TEXT,
-  noi TEXT,
-  PRIMARY KEY (nop)
+
+CREATE TABLE AutreCu (
+    idC C_id,
+    noECu TEXT,
+    noSEcu TEXT,
+    noACu TEXT,
+    statut TEXT,
+    CONSTRAINT AutreCu_cr0 FOREIGN KEY (idC, noECu, noSEcu, noACu) REFERENCES ActionCu (idC, noECu, noSEcu, noACu)
 );
 
-CREATE TABLE FOURNISSEUR (
-  nof TEXT,
-  nom TEXT,
-  adresse TEXT,
-  telephone TEXT,
-  courriel TEXT,
-  PRIMARY KEY (nof)
+
+CREATE TABLE MesureCu (
+    idC C_id,
+    noECu TEXT,
+    noSEcu TEXT,
+    noACu TEXT,
+    valeur TEXT,
+    CONSTRAINT MesureCu_cr0 FOREIGN KEY (idC, noECu, noSEcu, noACu) REFERENCES ActionCu (idC, noECu, noSEcu, noACu)
 );
 
-ALTER TABLE CUVEE ADD FOREIGN KEY (idre) REFERENCES RECETTE (idre);
-ALTER TABLE EQUIPEMENT ADD FOREIGN KEY (idmodele) REFERENCES EQUIPEMENTTYPE (idmodele);
-ALTER TABLE ETAPE ADD FOREIGN KEY (idmodele) REFERENCES EQUIPEMENTTYPE (idmodele);
-ALTER TABLE ETAPE ADD FOREIGN KEY (idre) REFERENCES RECETTE (idre);
-ALTER TABLE ETAPECU ADD FOREIGN KEY (idre, noetape) REFERENCES ETAPE (idre, noetape);
-ALTER TABLE ETAPECU ADD FOREIGN KEY (idcu) REFERENCES CUVEE (idcu);
-ALTER TABLE PARTIEDEE ADD FOREIGN KEY (idmodele_1, noserie) REFERENCES CAPTEUR (idmodele, noserie);
-ALTER TABLE PARTIEDEE ADD FOREIGN KEY (idmodele, noserie) REFERENCES EQUIPEMENT (idmodele, noserie);
-ALTER TABLE OPTIONDEE ADD FOREIGN KEY (idmodele_1) REFERENCES CAPTEURTYPE (idmodele);
-ALTER TABLE OPTIONDEE ADD FOREIGN KEY (idmodele) REFERENCES EQUIPEMENTTYPE (idmodele);
-ALTER TABLE CAPTEUR ADD FOREIGN KEY (idmodele) REFERENCES CAPTEURTYPE (idmodele);
-ALTER TABLE SOUSETAPE ADD FOREIGN KEY (idre, noetape) REFERENCES ETAPE (idre, noetape);
-ALTER TABLE SOUSETAPECU ADD FOREIGN KEY (idre, noetape, nose) REFERENCES SOUSETAPE (idre, noetape, nose);
-ALTER TABLE SOUSETAPECU ADD FOREIGN KEY (idcu, noetcu) REFERENCES ETAPECU (idcu, noetcu);
-ALTER TABLE OPTIONDEC ADD FOREIGN KEY (idmesure) REFERENCES MESURETYPE (idmesure);
-ALTER TABLE OPTIONDEC ADD FOREIGN KEY (idmodele) REFERENCES CAPTEURTYPE (idmodele);
-ALTER TABLE ACTION ADD FOREIGN KEY (idmesure) REFERENCES MESURERE (idmesure);
-ALTER TABLE ACTION ADD FOREIGN KEY (idre, noetape, nose) REFERENCES SOUSETAPE (idre, noetape, nose);
-ALTER TABLE ACTIONCU ADD FOREIGN KEY (idre, noetape, nose, noac) REFERENCES ACTION (idre, noetape, nose, noac);
-ALTER TABLE ACTIONCU ADD FOREIGN KEY (idcu, noetcu, nosecu) REFERENCES SOUSETAPECU (idcu, noetcu, nosecu);
-ALTER TABLE MESURERE ADD FOREIGN KEY (idmesure) REFERENCES MESURETYPE (idmesure);
-ALTER TABLE INTRANTRE ADD FOREIGN KEY (noi) REFERENCES INGREDIENT (noi);
-ALTER TABLE INTRANTCU ADD FOREIGN KEY (nop) REFERENCES PRODUIT (nop);
-ALTER TABLE PRODUIT ADD FOREIGN KEY (noi) REFERENCES INGREDIENT (noi);
-ALTER TABLE PRODUIT ADD FOREIGN KEY (nof) REFERENCES FOURNISSEUR (nof);
+
+CREATE TABLE OptionDeE(
+    idTEquip TEXT,
+    idTCap TEXT,
+    CONSTRAINT OptionDeE_cr0 FOREIGN KEY (idTEquip) REFERENCES EquipementType (idTEquip),
+    CONSTRAINT OptionDeE_cr1 FOREIGN KEY (idTCap) REFERENCES CapteurType (idTCap)
+);
+
+
+CREATE TABLE OptionDeC(
+    idTCap TEXT,
+    idM M_id,
+    CONSTRAINT OptionDeE_cr0 FOREIGN KEY (idM) REFERENCES MesureType (idM),
+    CONSTRAINT OptionDeE_cr1 FOREIGN KEY (idTCap) REFERENCES CapteurType (idTCap)
+);
+
+CREATE TABLE PartieDe(
+    idTEquip TEXT,
+    noSerieE TEXT,
+    idTCap TEXT,
+    noSerieC TEXT,
+    CONSTRAINT PartieDe_cr0 FOREIGN KEY (idTEquip, noSerieE) REFERENCES Equipement (idTEquip, noSerie),
+    CONSTRAINT PartieDe_cr1 FOREIGN KEY (idTCap,noSerieC) REFERENCES Capteur (idTCap,noSerie)
+);
+
+ALTER TABLE Action ADD CONSTRAINT Action_cr0 FOREIGN KEY (idM) REFERENCES MesureRe (idM);
